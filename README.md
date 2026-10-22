@@ -1,6 +1,7 @@
 # SIGYL
 
 Gesture-controlled, turn-based spellcasting game. NYU Computer Vision, Fall 2026.
+
 Authors: Anusha C and Anjali Paliyam. (Team Arcane)
 
 Pipeline: camera -> MediaPipe Hands -> stroke capture -> recognizer -> spell engine -> effects -> display.
