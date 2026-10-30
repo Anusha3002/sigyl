@@ -1,0 +1,6 @@
+# pin versions once installed
+opencv-python
+numpy
+mediapipe
+pyyaml
+pytest
