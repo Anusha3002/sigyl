@@ -7,7 +7,7 @@ from tracking.landmarks import Hand
 PALM = 0.1
 
 
-def make_hand(pinch=2.0, curl=1.5, cx=0.5, cy=0.5, palm=PALM):
+def make_hand(pinch=2.0, curl=1.5, cx=0.5, cy=0.5, palm=PALM, index_dx=0.0):
     """Hand with wrist at (cx, cy), palm size `palm`; `pinch` and `curl` are in palm sizes."""
     pts = [(cx, cy, 0.0)] * 21
     pts = list(pts)
@@ -16,6 +16,7 @@ def make_hand(pinch=2.0, curl=1.5, cx=0.5, cy=0.5, palm=PALM):
         x, y = cx + dx * palm, cy - palm
         pts[mcp] = (x, y, 0.0)
         pts[mcp + 3] = (x, y - curl * palm, 0.0)       # fingertip
+    pts[8] = (pts[8][0] + index_dx * palm, pts[8][1], 0.0)  # index_dx < 0 reaches the index (and thumb) away from the pinky
     ix, iy = pts[8][0], pts[8][1]
     pts[4] = (ix + pinch * palm, iy, 0.0)               # thumb tip
     return Hand("Right", 0.99, tuple(pts))
@@ -119,9 +120,17 @@ def test_short_fist_does_not_lock():
 def test_held_pinch_with_curled_fingers_is_not_a_fist():
     det = GestureDetector()
     events(det, zoom_sequence())
-    seq = [make_hand(pinch=2.0)] * 20 + [make_hand(pinch=0.15, curl=0.38)] * 60
+    seq = [make_hand(pinch=2.0)] * 20 + [make_hand(pinch=0.15, curl=0.38, index_dx=-0.6)] * 60
     assert events(det, seq, start=1000) == ["pinch_begin"]
     assert det.phase == DRAWING
+
+
+def test_fist_with_thumb_and_index_touching_still_locks():
+    # a real fist has thumb and index tips touching, just like a pinch (seen in recorded clips)
+    det = GestureDetector()
+    events(det, zoom_sequence())
+    seq = [make_hand(pinch=2.0)] * 20 + [make_hand(pinch=0.15, curl=0.35)] * 30
+    assert events(det, seq, start=1000) == ["lock"]
 
 
 def test_moving_fist_does_not_lock():
@@ -165,3 +174,25 @@ def test_config_rejects_unknown_names():
         GestureConfig.from_dict({"zoom_oepn": 1.0})
     assert GestureConfig.from_dict({"zoom_open": 1.0}).zoom_open == 1.0
     assert GestureConfig.from_dict(None).pinch_on == 0.3
+
+
+# ---- recorded clips (real hand, recorded on a Mac with `tracking.demo --save-landmarks`) ----
+import os
+
+from tracking.replay import replay
+
+DATA = os.path.join(os.path.dirname(__file__), "data")
+
+
+def test_recorded_zoom_and_drawing_clip_starts_once_and_never_locks():
+    found = replay(os.path.join(DATA, "clip_zoom_draw.jsonl"), GestureConfig())
+    names = [e for _, e in found]
+    assert names.count("start") == 1 and "lock" not in names
+    assert 8000 < found[0][0] < 9500          # she zoomed between 7.4 s and 9.5 s
+
+
+def test_recorded_fist_clip_locks_during_the_fists():
+    found = replay(os.path.join(DATA, "clip_zoom_fist.jsonl"), GestureConfig())
+    assert [e for _, e in found if e in ("start", "lock")] == ["start", "lock"]
+    lock_t = [t for t, e in found if e == "lock"][0]
+    assert 16000 < lock_t < 20000

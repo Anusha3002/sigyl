@@ -33,7 +33,8 @@ class GestureConfig:
     release_hold_ms: float = 80   # release must last this long before drawing stops
     start_cooldown_ms: float = 400  # after the zoom, ignore pinches for this long
     fist_curl: float = 0.45       # every fingertip closer than this (palm sizes) to its knuckle = fist
-    fist_min_pinch: float = 0.45  # a fist is not a pinch: thumb-index gap must be at least this (a held pinch also curls the fingers)
+    fist_thumb_tuck: float = 0.7  # thumb tip this close (palm sizes) to the pinky knuckle = thumb tucked across the palm.
+                                  # A fist also has thumb and index touching, so this is what tells it from a pinch.
     fist_hold_ms: float = 500     # fist must be held this long to lock in
     fist_max_speed: float = 1.0   # palm sizes per second; a moving hand is drawing, not a fist
     lost_ms: float = 150          # hand may vanish this long (tracker dropouts) without ending anything
@@ -52,6 +53,7 @@ class GestureConfig:
 class Features:
     pinch: float                     # thumb tip to index tip, in palm sizes
     curl: float                      # largest fingertip-to-knuckle distance, in palm sizes (small = fist)
+    thumb_tuck: float                # thumb tip to pinky knuckle, in palm sizes (small = thumb folded across the palm)
     palm: float                      # palm size in the image (0..1); grows as the hand nears the camera
     center: Tuple[float, float]      # palm center
     point: Tuple[float, float]       # where the pinch is (midpoint of thumb tip and index tip)
@@ -65,7 +67,7 @@ def features(hand: Hand) -> Features:
     cx = sum(hand.xy(i)[0] for i in (WRIST, INDEX_MCP, MIDDLE_MCP, PINKY_MCP)) / 4
     cy = sum(hand.xy(i)[1] for i in (WRIST, INDEX_MCP, MIDDLE_MCP, PINKY_MCP)) / 4
     (tx, ty), (ix, iy) = hand.xy(THUMB_TIP), hand.xy(INDEX_TIP)
-    return Features(pinch, curl, palm, (cx, cy), ((tx + ix) / 2, (ty + iy) / 2))
+    return Features(pinch, curl, d(THUMB_TIP, PINKY_MCP) / palm, palm, (cx, cy), ((tx + ix) / 2, (ty + iy) / 2))
 
 
 @dataclass(frozen=True)
@@ -132,7 +134,8 @@ class GestureDetector:
             return self._state(events, True, f)
 
         # READY or DRAWING ----------------------------------------------------
-        fist = f.curl <= c.fist_curl and f.pinch >= c.fist_min_pinch and self._speed() <= c.fist_max_speed
+        fist_pose = f.curl <= c.fist_curl and f.thumb_tuck <= c.fist_thumb_tuck
+        fist = fist_pose and self._speed() <= c.fist_max_speed
         if fist:
             if self._fist_since is None:
                 self._fist_since = t_ms
@@ -147,13 +150,14 @@ class GestureDetector:
             self._fist_since = None
 
         if t_ms - self._ready_since >= c.start_cooldown_ms:
-            self._update_pinch(t_ms, f, events)
+            self._update_pinch(t_ms, f, events, fist_pose)
         return self._state(events, True, f)
 
     # ---- helpers ------------------------------------------------------------
-    def _update_pinch(self, t_ms: float, f: Features, events: List[str]) -> None:
+    def _update_pinch(self, t_ms: float, f: Features, events: List[str], fist_pose: bool) -> None:
         c = self.cfg
-        want = f.pinch < c.pinch_on if not self._pinching else not f.pinch > c.pinch_off
+        # A fist has thumb and index touching too, so a closing fist must not start a stroke.
+        want = (f.pinch < c.pinch_on and not fist_pose) if not self._pinching else (not f.pinch > c.pinch_off and not fist_pose)
         if want == self._pinching:
             self._pinch_change_since = None
             return
