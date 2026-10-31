@@ -97,6 +97,12 @@ class GestureDetector:
         self._ready_since = 0.0
         self._last: Optional[GestureState] = None
 
+    def start_ready(self) -> None:
+        """Skip the zoom and go straight to READY (used by the shape recorder)."""
+        self.reset()
+        self.phase = READY
+        self._ready_since = -1e9
+
     def update(self, t_ms: float, hand: Optional[Hand]) -> GestureState:
         c = self.cfg
         events: List[str] = []
