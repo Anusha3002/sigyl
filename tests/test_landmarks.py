@@ -1,7 +1,7 @@
 from types import SimpleNamespace as NS
 
 from tracking.landmarks import (
-    HAND_CONNECTIONS, INDEX_TIP, THUMB_TIP, Hand, LandmarkWriter, load_landmarks, parse_result,
+    HAND_CONNECTIONS, INDEX_TIP, THUMB_TIP, Hand, LandmarkWriter, load_landmarks, load_markers, parse_result,
 )
 
 
@@ -63,3 +63,16 @@ def test_landmark_file_roundtrip(tmp_path):
     got = frames[2][1][0]
     assert got.label == "Right"
     assert all(abs(a - b) < 1e-4 for p, q in zip(got.points, hand.points) for a, b in zip(p, q))
+
+
+def test_markers_are_saved_and_do_not_disturb_frames(tmp_path):
+    path = str(tmp_path / "m.jsonl")
+    hand = parse_result(fake_result())[0]
+    with LandmarkWriter(path) as w:
+        w.write(0.0, [hand])
+        w.mark(10.0, "2")
+        w.write(33.3, [hand])
+        w.mark(50.0, "f")
+    assert load_markers(path) == [(10.0, "2"), (50.0, "f")]
+    header, frames = load_landmarks(path)
+    assert [t for t, _ in frames] == [0.0, 33.3]

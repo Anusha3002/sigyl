@@ -1,7 +1,8 @@
 """Live hand view.
 
   python -m tracking.demo                          live camera, press q or Esc to quit
-  python -m tracking.demo --save-landmarks a.jsonl records the landmarks of every frame
+  python -m tracking.demo --save-landmarks a.jsonl records the landmarks of every frame;
+                                                   press a key to label the next gesture
   python -m tracking.demo --video clip.mp4 --save-landmarks a.jsonl --no-window
                                                    runs the tracker on a recorded clip
 """
@@ -57,6 +58,7 @@ def main() -> int:
     fps_smooth = 0.0
     last = start
     detect_ms = 0.0
+    last_marker = "-"
     try:
         while True:
             if video is not None:
@@ -92,11 +94,14 @@ def main() -> int:
                 put_lines(frame, [
                     f"FPS {fps_smooth:4.1f}   detect {detect_ms:4.1f} ms",
                     f"hands {len(hands)}" + (f"   {hands[0].label} ({hands[0].score:.2f})" if hands else ""),
-                ])
+                ] + ([f"marker: {last_marker}   (press a key to label what you do next)"] if writer else []))
                 cv2.imshow(WINDOW, frame)
                 key = cv2.waitKey(1) & 0xFF
                 if key in (ord("q"), 27):
                     break
+                if 32 < key < 127 and writer:  # any other key: label what you are about to do
+                    last_marker = chr(key)
+                    writer.mark(t_ms, last_marker)
             if args.seconds and time.time() - start >= args.seconds:
                 break
     finally:

@@ -77,6 +77,10 @@ class LandmarkWriter:
     def write(self, t_ms: float, hands: Sequence[Hand]) -> None:
         self._f.write(json.dumps({"t": round(t_ms, 1), "hands": [_hand_to_dict(h) for h in hands]}) + "\n")
 
+    def mark(self, t_ms: float, label: str) -> None:
+        """Record a label (for example a key you pressed) at this moment."""
+        self._f.write(json.dumps({"t": round(t_ms, 1), "marker": label}) + "\n")
+
     def close(self) -> None:
         self._f.close()
 
@@ -99,6 +103,21 @@ def load_landmarks(path: str) -> Tuple[dict, List[Tuple[float, List[Hand]]]]:
             row = json.loads(line)
             if "header" in row:
                 header = row["header"]
+            elif "marker" in row:
+                continue
             else:
                 frames.append((float(row["t"]), [_hand_from_dict(h) for h in row["hands"]]))
     return header, frames
+
+
+def load_markers(path: str) -> List[Tuple[float, str]]:
+    """Returns [(t_ms, label), ...] for every marker in a landmark file."""
+    markers: List[Tuple[float, str]] = []
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                row = json.loads(line)
+                if "marker" in row:
+                    markers.append((float(row["t"]), row["marker"]))
+    return markers
