@@ -11,6 +11,7 @@ DEFAULTS: Dict[str, Any] = {
     "max_hands": 1,
     "model_path": "models/hand_landmarker.task",
     "effect_quality": "medium",
+    "gestures": {},
 }
 
 
