@@ -84,7 +84,14 @@ def main() -> int:
             print(f"  index {i}: opened but returned no frame")
         cap.release()
     if not found:
-        print("No camera returned a frame. Check camera permission for Terminal and that OBS Virtual Camera is started.")
+        print()
+        print("No camera returned a frame. Most likely macOS has not given this terminal app camera access:")
+        print("  1. Open System Settings > Privacy & Security > Camera and switch on your terminal app")
+        print("     (Terminal, iTerm, or the editor you run this from).")
+        print("  2. If it is not listed, run:  tccutil reset Camera com.apple.Terminal")
+        print("     then run this check again and click Allow when the prompt appears.")
+        print("  3. Quit the terminal app completely (Cmd+Q), reopen it, and rerun this check.")
+        print("Also make sure OBS is open and Start Virtual Camera is on.")
         return 2
     print("Open the snapshots to see which index is the OBS Virtual Camera.")
     return 0

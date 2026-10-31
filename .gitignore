@@ -5,3 +5,4 @@
 __pycache__/
 camera_check/
 models/*.task
+requirements.lock.txt

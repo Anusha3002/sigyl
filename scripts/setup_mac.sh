@@ -15,7 +15,7 @@ echo "Using $($PY --version) at $PY"
 "$PY" -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install opencv-python numpy mediapipe pyyaml pytest
+python -m pip install mediapipe numpy pyyaml pytest  # mediapipe brings OpenCV with it
 
 echo
 echo "Downloading the MediaPipe hand landmarker model (about 8 MB)..."
@@ -27,7 +27,7 @@ fi
 
 echo
 echo "Installed versions:"
-python -m pip freeze | grep -iE '^(opencv-python|numpy|mediapipe|pyyaml|pytest)==' | tee requirements.lock.txt
+python -m pip freeze | grep -iE '^(opencv-contrib-python|opencv-python|numpy|mediapipe|pyyaml|pytest)==' | tee requirements.lock.txt
 echo
 echo "Running the environment and camera check. If macOS asks, allow camera access for Terminal."
 echo "Start the OBS Virtual Camera first if you want it to show up."
