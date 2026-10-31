@@ -1,3 +1,9 @@
-camera_index: 0
-resolution: [640, 480]
-effect_quality: medium   # low | medium | high
+# Sigyl settings. Edit here instead of in the code.
+camera_index: 0            # run `python -m tracking.check_env` and look at camera_check/ to find yours
+resolution: [640, 480]     # width, height the pipeline works at (Pi friendly)
+fps: 30
+mirror: true               # mirror like a mirror; also makes MediaPipe's Left/Right label match your real hand
+fit: crop                  # crop (no distortion) or stretch, when the camera is not 4:3
+max_hands: 1               # 1 for one-player testing
+model_path: models/hand_landmarker.task
+effect_quality: medium     # low | medium | high
