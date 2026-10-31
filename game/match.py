@@ -2,7 +2,10 @@
 from dataclasses import dataclass, field
 from typing import List, Optional, Sequence, Tuple
 
-from .cards import MAX_AURA, START_AURA, Card, CardType
+from .cards import FIZZLE, MAX_AURA, START_AURA, Card, CardType
+
+SURGE_BONUS = 20  # added to the attack in the slot after a Surge
+CHARM_STEAL = 20  # Aura moved from the opponent to the Charm player
 
 
 @dataclass(frozen=True)
@@ -12,6 +15,7 @@ class SlotResult:
     delta: Tuple[int, int]  # Aura change applied to each player (after clamping)
     aura: Tuple[int, int]  # Aura after the slot
     note: str = ""
+    surge_next: Tuple[int, int] = (0, 0)  # Surge bonus carried into the next slot
 
 
 @dataclass
@@ -25,58 +29,79 @@ class MatchResult:
         return self.slots[-1].aura if self.slots else (START_AURA, START_AURA)
 
 
-def _raw_change(a: Card, b: Card) -> Tuple[int, int, str]:
-    """Unclamped Aura change for (player0, player1) and a short note for one slot."""
-    t0, t1 = a.type, b.type
+def resolve_slot(
+    slot: int,
+    a: Card,
+    b: Card,
+    aura: Tuple[int, int],
+    surge: Tuple[int, int] = (0, 0),
+) -> SlotResult:
+    """Resolve one slot. `surge` is the bonus each player carries in from a Surge last slot."""
+    notes: List[str] = []
+
+    # Vanish: if either player plays it, both cards do nothing this slot.
+    if a.type == CardType.VANISH or b.type == CardType.VANISH:
+        ea = eb = FIZZLE
+        notes.append("vanish cancels the slot")
+    else:
+        ea, eb = a, b
+
+    ta, tb = ea.type, eb.type
+    # a pending Surge boosts an attack in this slot and is used up either way
+    va = ea.value + (surge[0] if ta == CardType.ATTACK else 0)
+    vb = eb.value + (surge[1] if tb == CardType.ATTACK else 0)
+    if (ta == CardType.ATTACK and surge[0]) or (tb == CardType.ATTACK and surge[1]):
+        notes.append("surge boost")
+
     c0 = c1 = 0
-    note = ""
 
     # attacks
-    if t0 == CardType.ATTACK and t1 == CardType.ATTACK:
-        if a.value > b.value:
-            c1 -= a.value - b.value
-            note = "attack beats weaker attack"
-        elif b.value > a.value:
-            c0 -= b.value - a.value
-            note = "attack beats weaker attack"
+    if ta == CardType.ATTACK and tb == CardType.ATTACK:
+        if va > vb:
+            c1 -= va - vb
+        elif vb > va:
+            c0 -= vb - va
         else:
-            note = "equal attacks cancel"
+            notes.append("equal attacks cancel")
     else:
-        for me, (mt, mv), (ot, ov) in ((0, (t0, a.value), (t1, b.value)), (1, (t1, b.value), (t0, a.value))):
-            if mt != CardType.ATTACK:
-                continue
-            dmg = mv
-            if ot == CardType.DEFENSE:
-                dmg = max(0, mv - ov)
-                note = "defense blocks"
-            elif ot == CardType.MIRROR:
-                # reflected: the attacker takes it instead
-                if me == 0:
-                    c0 -= mv
-                else:
-                    c1 -= mv
-                note = "mirror reflects"
-                continue
-            if me == 0:
-                c1 -= dmg
+        if ta == CardType.ATTACK:
+            if tb == CardType.MIRROR:
+                c0 -= va  # reflected back at the attacker
+                notes.append("mirror reflects")
+            elif tb == CardType.DEFENSE:
+                c1 -= max(0, va - vb)
             else:
-                c0 -= dmg
+                c1 -= va
+        if tb == CardType.ATTACK:
+            if ta == CardType.MIRROR:
+                c1 -= vb
+                notes.append("mirror reflects")
+            elif ta == CardType.DEFENSE:
+                c0 -= max(0, vb - va)
+            else:
+                c0 -= vb
 
-    # heals (applied together with damage as a net change)
-    if t0 == CardType.HEAL:
-        c0 += a.value
-        note = note or "heal"
-    if t1 == CardType.HEAL:
-        c1 += b.value
-        note = note or "heal"
-    return c0, c1, note
+    # heals
+    if ta == CardType.HEAL:
+        c0 += va
+    if tb == CardType.HEAL:
+        c1 += vb
 
+    # charm: steals Aura; not blocked by defense and not reflected by mirror
+    if ta == CardType.CHARM:
+        c0 += CHARM_STEAL
+        c1 -= CHARM_STEAL
+    if tb == CardType.CHARM:
+        c1 += CHARM_STEAL
+        c0 -= CHARM_STEAL
 
-def resolve_slot(slot: int, a: Card, b: Card, aura: Tuple[int, int]) -> SlotResult:
-    c0, c1, note = _raw_change(a, b)
     n0 = max(0, min(MAX_AURA, aura[0] + c0))
     n1 = max(0, min(MAX_AURA, aura[1] + c1))
-    return SlotResult(slot, (a, b), (n0 - aura[0], n1 - aura[1]), (n0, n1), note)
+    next_surge = (
+        SURGE_BONUS if ta == CardType.SURGE else 0,
+        SURGE_BONUS if tb == CardType.SURGE else 0,
+    )
+    return SlotResult(slot, (a, b), (n0 - aura[0], n1 - aura[1]), (n0, n1), "; ".join(notes), next_surge)
 
 
 def resolve_match(seq0: Sequence[Card], seq1: Sequence[Card]) -> MatchResult:
@@ -84,10 +109,11 @@ def resolve_match(seq0: Sequence[Card], seq1: Sequence[Card]) -> MatchResult:
         raise ValueError("sequences must be the same length")
     result = MatchResult()
     aura = (START_AURA, START_AURA)
+    surge = (0, 0)
     for i, (a, b) in enumerate(zip(seq0, seq1), start=1):
-        slot = resolve_slot(i, a, b, aura)
+        slot = resolve_slot(i, a, b, aura, surge)
         result.slots.append(slot)
-        aura = slot.aura
+        aura, surge = slot.aura, slot.surge_next
         if aura[0] == 0 or aura[1] == 0:
             result.knockout = True
             break

@@ -91,9 +91,9 @@ def test_knockout_stops_early():
     assert len(r.slots) == 2 and r.aura == (100, 0)
 
 
-def test_only_one_player_can_lose_aura_in_a_slot():
-    """So both players reaching 0 in the same slot cannot happen with these rules."""
-    cards = default_deck() + [FIZZLE]
+def test_only_one_player_can_lose_aura_in_a_slot_without_charm():
+    """Without Charm, only one player can lose Aura per slot."""
+    cards = [c for c in default_deck() + [FIZZLE] if c.type != CardType.CHARM]
     for x in cards:
         for y in cards:
             d = resolve_slot(1, x, y, (100, 100)).delta

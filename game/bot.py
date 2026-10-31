@@ -27,17 +27,22 @@ class RandomBot:
 class HeuristicBot(RandomBot):
     """Prefers strong cards, limits how many defense/heal/mirror cards it takes."""
 
-    CAPS = {CardType.DEFENSE: 2, CardType.HEAL: 1, CardType.MIRROR: 1}
+    CAPS = {
+        CardType.DEFENSE: 2, CardType.HEAL: 1, CardType.MIRROR: 1,
+        CardType.VANISH: 1, CardType.CHARM: 1, CardType.SURGE: 1,
+    }
     WEIGHT = {CardType.ATTACK: 1.0, CardType.DEFENSE: 0.7, CardType.HEAL: 0.8}
-    MIRROR_SCORE = 35
+    FLAT_SCORE = {
+        CardType.MIRROR: 35, CardType.VANISH: 30, CardType.CHARM: 40, CardType.SURGE: 25,
+    }
 
     def __init__(self, seed: Optional[int] = None, fizzle_prob: float = 0.0, noise: float = 8.0):
         super().__init__(seed, fizzle_prob)
         self.noise = noise
 
     def _score(self, card: Card, picks: List[Card]) -> float:
-        if card.type == CardType.MIRROR:
-            base = self.MIRROR_SCORE
+        if card.type in self.FLAT_SCORE:
+            base = self.FLAT_SCORE[card.type]
         else:
             base = card.value * self.WEIGHT[card.type]
         cap = self.CAPS.get(card.type)
