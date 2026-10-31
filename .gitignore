@@ -1,4 +1,7 @@
-__pycache__/
+*.bundle
 *.pyc
-.venv/
 .DS_Store
+.venv/
+__pycache__/
+camera_check/
+models/*.task
