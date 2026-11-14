@@ -23,7 +23,7 @@ class Stroke:
 
 
 class StrokeCapture:
-    def __init__(self, min_points: int = 8, min_length: float = 0.10, smoothing: float = 0.5,
+    def __init__(self, min_points: int = 8, min_length: float = 0.20, smoothing: float = 0.5,
                  max_pinch: float = 0.45, trim: int = 2):
         """min_length is a fraction of the frame width; smoothing 0..1 (1 = no smoothing).
 
