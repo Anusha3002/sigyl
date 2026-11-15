@@ -33,6 +33,8 @@ MAX_AURA = 100
 class Card:
     type: CardType
     value: int = 0
+    title: str = ""  # the card's own name, e.g. "Slash"; also the name of its sigil
+
 
     def __post_init__(self):
         if self.type in NO_VALUE_TYPES:
@@ -52,25 +54,31 @@ class Card:
             return self.type.value.capitalize()
         return f"{self.type.value.capitalize()} {self.value}"
 
+    @property
+    def label(self) -> str:
+        """What to show a player: the card's own name if it has one."""
+        return self.title or self.name
+
 
 FIZZLE = Card(CardType.FIZZLE)
 
-_ATTACKS = [10, 10, 10, 20, 20, 20, 30, 30, 40, 50]
-_DEFENSES = [10, 20, 20, 30, 30, 40, 50]
-_HEALS = [30, 50]
-_MIRRORS = 2
-_VANISHES = 2
-_SURGES = 2
-_CHARMS = 1
+# The deck: every card has its own name and its own sigil (see recognition/sigils.py).
+CATALOG = [
+    ("Slash", CardType.ATTACK, 30), ("Fang", CardType.ATTACK, 20), ("Bolt", CardType.ATTACK, 20),
+    ("Rake", CardType.ATTACK, 40), ("Spear", CardType.ATTACK, 50), ("Scythe", CardType.ATTACK, 20),
+    ("Crush", CardType.ATTACK, 10), ("Bite", CardType.ATTACK, 30), ("Talon", CardType.ATTACK, 10),
+    ("Quake", CardType.ATTACK, 10),
+    ("Wall", CardType.DEFENSE, 10), ("Shield", CardType.DEFENSE, 20), ("Ring", CardType.DEFENSE, 40),
+    ("Cup", CardType.DEFENSE, 30), ("Buckler", CardType.DEFENSE, 50), ("Aegis", CardType.DEFENSE, 30),
+    ("Gate", CardType.DEFENSE, 20),
+    ("Mend", CardType.HEAL, 30), ("Bloom", CardType.HEAL, 50),
+    ("Hourglass", CardType.MIRROR, 0), ("Bowtie", CardType.MIRROR, 0),
+    ("Fade", CardType.VANISH, 0), ("Wisp", CardType.VANISH, 0),
+    ("Rise", CardType.SURGE, 0), ("Spring", CardType.SURGE, 0),
+    ("Heart", CardType.CHARM, 0),
+]
 
 
 def default_deck() -> List[Card]:
-    """Placeholder 26-card deck. Edit the lists above to redesign it."""
-    deck = [Card(CardType.ATTACK, v) for v in _ATTACKS]
-    deck += [Card(CardType.DEFENSE, v) for v in _DEFENSES]
-    deck += [Card(CardType.HEAL, v) for v in _HEALS]
-    deck += [Card(CardType.MIRROR) for _ in range(_MIRRORS)]
-    deck += [Card(CardType.VANISH) for _ in range(_VANISHES)]
-    deck += [Card(CardType.SURGE) for _ in range(_SURGES)]
-    deck += [Card(CardType.CHARM) for _ in range(_CHARMS)]
-    return deck
+    """The 26-card deck. Edit CATALOG above to redesign it."""
+    return [Card(t, v, title) for title, t, v in CATALOG]
