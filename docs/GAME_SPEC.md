@@ -73,7 +73,7 @@ In simulation (5000 bot games) about 23% of games end tied and under 1% end in a
 - Every card now has its own name and sigil (26 in total, same types and values as before). The list is `CATALOG` in `game/cards.py`; the shapes are in `recognition/sigils.py`; the card pictures are in `assets/cards/`.
 - You pick a card by drawing its sigil. The upright shape matters; where you start and which direction you draw do not. The recognizer only chooses among the three cards on offer.
 - A pick stays selected until you draw a different sigil. A fist locks it in. A fist with nothing selected does nothing.
-- 30 seconds per pick. When time runs out the selected card is taken; with nothing selected the slot gets a Fizzle.
+- 25 seconds per pick. When time runs out the selected card is taken; with nothing selected the slot gets a Fizzle.
 - After five picks the slots are revealed one at a time against the bot (the smarter bot), then the result; a zoom starts a new match.
 - Run it with `python -m ui.play`. Keys for testing: s start, 1 2 3 pick, space lock, r restart, q quit.
 

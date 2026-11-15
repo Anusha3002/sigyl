@@ -20,7 +20,7 @@ WAITING, DRAFT, REVEAL, RESULT = "waiting", "draft", "reveal", "result"
 
 
 class MatchSession:
-    def __init__(self, seed: Optional[int] = None, pick_seconds: float = 30.0, reveal_seconds: float = 2.5):
+    def __init__(self, seed: Optional[int] = None, pick_seconds: float = 25.0, reveal_seconds: float = 2.5):
         self.pick_seconds = pick_seconds
         self.reveal_seconds = reveal_seconds
         self._seed = seed

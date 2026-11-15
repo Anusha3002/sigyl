@@ -105,7 +105,7 @@ def main() -> int:
     ap.add_argument("--config", default="config.yaml")
     ap.add_argument("--camera", type=int)
     ap.add_argument("--shapes", help="recorded sigil drawings to learn from")
-    ap.add_argument("--seconds", type=float, default=30.0, help="time per pick")
+    ap.add_argument("--seconds", type=float, default=25.0, help="time per pick")
     args = ap.parse_args()
 
     cfg = load_config(args.config)

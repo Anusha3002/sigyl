@@ -20,11 +20,11 @@ def test_starts_waiting_and_ignores_everything_until_started():
     assert s.phase == WAITING
 
 
-def test_start_gives_three_cards_and_a_30_second_timer():
+def test_start_gives_three_cards_and_a_25_second_timer():
     s = MatchSession(seed=1)
     assert s.start(10.0)
     assert s.phase == DRAFT and len(s.offer) == 3 and s.turn == 1
-    assert s.time_left(10.0) == 30.0 and s.time_left(25.0) == 15.0
+    assert s.time_left(10.0) == 25.0 and s.time_left(25.0) == 10.0
     assert all(c.title for c in s.offer)
 
 
@@ -53,10 +53,10 @@ def test_timer_takes_the_highlighted_card():
     s.start(0.0)
     s.select(1)
     chosen = s.offer[1]
-    s.tick(29.9)
+    s.tick(24.9)
     assert s.picks == []
-    s.tick(30.0)
-    assert s.picks == [chosen] and s.time_left(30.0) == 30.0
+    s.tick(25.0)
+    assert s.picks == [chosen] and s.time_left(25.0) == 25.0
 
 
 def test_timer_with_nothing_selected_gives_a_fizzle():
