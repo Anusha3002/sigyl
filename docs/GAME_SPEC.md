@@ -77,3 +77,14 @@ In simulation (5000 bot games) about 23% of games end tied and under 1% end in a
 - After five picks the slots are revealed one at a time against the bot (the smarter bot), then the result; a zoom starts a new match.
 - Run it with `python -m ui.play`. Keys for testing: s start, 1 2 3 pick, space lock, r restart, q quit.
 
+## Update, Nov 15 (later): rules changed to make matches less flat
+
+Real matches ended 100-100 or 100-80: in bot simulations 57% of slots changed nothing and 23% of matches were draws. Changed, by decision after play-testing:
+
+- **Start at 60 Aura** (cap stays 100), so heals matter from the first slot.
+- **Attack vs attack: both land in full.** They no longer cancel down to the difference.
+- **Defense blocks half its value** (Buckler 50 blocks 25), so strong attacks still get through.
+
+Effect in 4,000 bot-vs-bot matches (smarter bot on both sides): draws about 15%, knockouts about 59%, dead slots about 30%. Knockouts are now common; if that is too deadly, the levers are `START_AURA` in `game/cards.py` and `DEFENSE_BLOCK` in `game/match.py`.
+The older rule text above (difference rule, full block, start at 100) is superseded by this section.
+

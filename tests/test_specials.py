@@ -60,13 +60,11 @@ def test_both_players_can_hit_zero_in_the_same_slot_with_charm_and_attack():
 
 
 def test_both_players_at_zero_after_a_slot_is_a_drawn_knockout():
-    # attacks of different strength bring both players down to 20, then Charm vs Attack
-    seq0 = [A(50), A(10), A(50), A(10), C]
-    seq1 = [A(10), A(50), A(10), A(50), A(50)]
-    r = resolve_match(seq0, seq1)
-    assert r.slots[3].aura == (20, 20)
-    assert r.slots[4].aura == (0, 0)
-    assert r.knockout and r.winner is None
+    # equal attacks bring both players down together until both hit zero
+    r = resolve_match([A(30), A(30), F, F, F], [A(30), A(30), F, F, F])
+    assert r.slots[0].aura == (30, 30)
+    assert r.slots[1].aura == (0, 0)
+    assert r.knockout and r.winner is None and len(r.slots) == 2
 
 
 # ---- Surge ----------------------------------------------------------------
@@ -83,18 +81,18 @@ def test_surge_is_wasted_if_the_next_card_is_not_an_attack():
 
 def test_surge_in_the_last_slot_does_nothing():
     r = resolve_match([F, F, F, F, S], [F] * 5)
-    assert r.aura == (100, 100) and r.winner is None
+    assert r.aura == (60, 60) and r.winner is None
 
 
 def test_surged_attack_counts_in_attack_vs_attack():
     r = resolve_match([S, A(10)], [F, A(30)])
-    # 10 + 20 = 30 vs 30: cancel
-    assert r.slots[1].delta == (0, 0)
+    # the boosted 10 + 20 = 30 lands on them, their 30 lands on you
+    assert r.slots[1].delta == (-30, -30)
 
 
 def test_surged_attack_against_defense_and_mirror():
     r = resolve_match([S, A(10)], [F, D(20)])
-    assert r.slots[1].delta == (0, -10)  # 30 - 20
+    assert r.slots[1].delta == (0, -20)  # 30 minus half of the 20 defense
     r = resolve_match([S, A(10)], [F, M])
     assert r.slots[1].delta == (-30, 0)  # the mirror returns the boosted 30
 
@@ -107,11 +105,11 @@ def test_vanished_attack_still_uses_up_the_surge():
 
 def test_surge_vs_surge_each_boosts_their_own_next_attack():
     r = resolve_match([S, A(10)], [S, A(20)])
-    # 30 vs 40 -> P0 loses 10
-    assert r.slots[1].delta == (-10, 0)
+    # both boosted attacks land: you take 40, they take 30
+    assert r.slots[1].delta == (-40, -30)
 
 
 def test_surge_then_attacks_can_knock_out():
     r = resolve_match([S, A(50), A(50)], [F] * 3)
-    assert r.slots[1].delta == (0, -70)
-    assert r.knockout and r.winner == 0 and len(r.slots) == 3
+    assert r.slots[1].delta == (0, -60)  # 70 damage, but they only had 60
+    assert r.knockout and r.winner == 0 and len(r.slots) == 2

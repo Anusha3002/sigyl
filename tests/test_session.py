@@ -70,7 +70,7 @@ def test_five_picks_then_reveal_slot_by_slot_then_result():
     s = MatchSession(seed=4, reveal_seconds=2.0)
     now = play_draft(s)
     assert s.phase == REVEAL and len(s.picks) == 5 and s.shown_slots == []
-    assert s.aura == (100, 100)
+    assert s.aura == (60, 60)
     n = len(s.result.slots)
     for i in range(1, n + 1):
         now += 2.0
@@ -97,7 +97,7 @@ def test_no_actions_during_reveal_and_new_match_after_result():
         s.tick(now)
     assert s.phase == RESULT
     assert s.start(now)
-    assert s.phase == DRAFT and s.picks == [] and s.turn == 1 and s.aura == (100, 100)
+    assert s.phase == DRAFT and s.picks == [] and s.turn == 1 and s.aura == (60, 60)
 
 
 def test_same_seed_same_match():

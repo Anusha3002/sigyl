@@ -13,22 +13,24 @@ def slot(a, b, aura=(100, 100)):
     return resolve_slot(1, a, b, aura)
 
 
-def test_attack_vs_weaker_attack_only_difference_counts():
+def test_attack_vs_attack_both_land_in_full():
     r = slot(A(10), A(20))
-    assert r.delta == (-10, 0)  # the 10-point attacker loses 10
+    assert r.delta == (-20, -10)  # each player takes the other's attack
     r = slot(A(40), A(10))
-    assert r.delta == (0, -30)
+    assert r.delta == (-10, -40)
 
 
-def test_equal_attacks_cancel():
-    assert slot(A(30), A(30)).delta == (0, 0)
+def test_equal_attacks_both_land():
+    assert slot(A(30), A(30)).delta == (-30, -30)
 
 
 def test_attack_vs_defense():
-    assert slot(A(30), D(10)).delta == (0, -20)
-    assert slot(A(30), D(30)).delta == (0, 0)
+    # a defense card blocks half its value
+    assert slot(A(30), D(10)).delta == (0, -25)
+    assert slot(A(30), D(30)).delta == (0, -15)
     assert slot(A(10), D(50)).delta == (0, 0)  # block can't go negative
-    assert slot(D(20), A(50)).delta == (-30, 0)
+    assert slot(D(20), A(50)).delta == (-40, 0)
+    assert slot(A(50), D(50)).delta == (0, -25)  # even the best defense lets a big attack through
 
 
 def test_attack_vs_heal_nets_together():
@@ -76,7 +78,7 @@ def test_higher_aura_wins_after_five_slots():
     seq0 = [A(10), F, F, F, F]
     seq1 = [F, F, F, F, F]
     r = resolve_match(seq0, seq1)
-    assert r.aura == (100, 90) and r.winner == 0 and not r.knockout
+    assert r.aura == (60, 50) and r.winner == 0 and not r.knockout
     assert len(r.slots) == 5
 
 
@@ -88,23 +90,26 @@ def test_equal_aura_is_a_draw():
 def test_knockout_stops_early():
     r = resolve_match([A(50), A(50), A(50), A(50), A(50)], [F] * 5)
     assert r.knockout and r.winner == 0
-    assert len(r.slots) == 2 and r.aura == (100, 0)
+    assert len(r.slots) == 2 and r.aura == (60, 0)
 
 
-def test_only_one_player_can_lose_aura_in_a_slot_without_charm():
-    """Without Charm, only one player can lose Aura per slot."""
+def test_both_players_lose_aura_only_in_attack_vs_attack_or_with_charm():
     cards = [c for c in default_deck() + [FIZZLE] if c.type != CardType.CHARM]
     for x in cards:
         for y in cards:
             d = resolve_slot(1, x, y, (100, 100)).delta
-            assert not (d[0] < 0 and d[1] < 0), (x, y, d)
-            d = resolve_slot(1, x, y, (50, 50)).delta
-            assert not (d[0] < 0 and d[1] < 0), (x, y, d)
+            both_attack = x.type == CardType.ATTACK and y.type == CardType.ATTACK
+            assert (d[0] < 0 and d[1] < 0) == both_attack, (x, y, d)
+
+
+def test_match_starts_at_60_aura_and_heals_can_go_up_to_100():
+    r = resolve_match([H(50), H(50), F, F, F], [F] * 5)
+    assert r.slots[0].aura == (100, 60) and r.slots[1].aura == (100, 60)
 
 
 def test_equal_aura_after_all_slots_is_a_draw():
-    r = resolve_match([A(50), A(10), F, F, F], [A(10), A(50), F, F, F])
-    assert r.aura == (60, 60) and r.winner is None
+    r = resolve_match([A(20), A(10), F, F, F], [A(10), A(20), F, F, F])
+    assert r.aura == (30, 30) and r.winner is None
 
 
 def test_mismatched_lengths_rejected():

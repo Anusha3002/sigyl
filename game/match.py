@@ -5,6 +5,7 @@ from typing import List, Optional, Sequence, Tuple
 from .cards import FIZZLE, MAX_AURA, START_AURA, Card, CardType
 
 SURGE_BONUS = 20  # added to the attack in the slot after a Surge
+DEFENSE_BLOCK = 0.5  # a defense card blocks this share of its value (Buckler 50 blocks 25)
 CHARM_STEAL = 20  # Aura moved from the opponent to the Charm player
 
 
@@ -57,19 +58,17 @@ def resolve_slot(
 
     # attacks
     if ta == CardType.ATTACK and tb == CardType.ATTACK:
-        if va > vb:
-            c1 -= va - vb
-        elif vb > va:
-            c0 -= vb - va
-        else:
-            notes.append("equal attacks cancel")
+        # two attacks do not cancel: both land in full
+        c1 -= va
+        c0 -= vb
+        notes.append("both attacks land")
     else:
         if ta == CardType.ATTACK:
             if tb == CardType.MIRROR:
                 c0 -= va  # reflected back at the attacker
                 notes.append("mirror reflects")
             elif tb == CardType.DEFENSE:
-                c1 -= max(0, va - vb)
+                c1 -= max(0, va - int(vb * DEFENSE_BLOCK))
             else:
                 c1 -= va
         if tb == CardType.ATTACK:
@@ -77,7 +76,7 @@ def resolve_slot(
                 c1 -= vb
                 notes.append("mirror reflects")
             elif ta == CardType.DEFENSE:
-                c0 -= max(0, vb - va)
+                c0 -= max(0, vb - int(va * DEFENSE_BLOCK))
             else:
                 c0 -= vb
 

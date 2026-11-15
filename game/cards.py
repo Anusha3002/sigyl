@@ -25,7 +25,7 @@ NO_VALUE_TYPES = frozenset(
 )
 
 MAX_VALUE = 50
-START_AURA = 100
+START_AURA = 60   # everyone starts below the cap, so heals matter from the first slot
 MAX_AURA = 100
 
 
