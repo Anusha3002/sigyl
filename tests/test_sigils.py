@@ -98,3 +98,22 @@ def test_learning_from_a_real_drawing():
 
 def test_looks_closed():
     assert looks_closed(SIGILS["Ring"][0]) and not looks_closed(SIGILS["Slash"][0])
+
+
+def test_evaluation_on_made_up_recordings(tmp_path, capsys):
+    from recognition.dollar1 import save_shape
+    from recognition.evaluate_sigils import main, score_all, summarize
+    path = str(tmp_path / "sig.jsonl")
+    for name in ("Slash", "Ring", "Rake", "Wall", "Cup"):
+        for k in range(2):
+            save_shape(path, name, wobbly(SIGILS[name][0], seed=k + 10))
+    from recognition.dollar1 import load_shapes
+    shapes = load_shapes(path)
+    all26, confusion, (right, wrong, total), _ = summarize(score_all(shapes, learned=False), 0.72, 0.02)
+    assert sum(all26.values()) == 10 and all26["right"] >= 9
+    assert total == 10 * 300 and right / total > 0.95      # 300 = pairs of other cards
+    import sys
+    sys.argv = ["evaluate_sigils", path]
+    assert main() == 0
+    out = capsys.readouterr().out
+    assert "among 3 on offer" in out and "leave-one-out" in out

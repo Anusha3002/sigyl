@@ -70,7 +70,9 @@ Full rules and their history: `docs/GAME_SPEC.md`.
 python -m pytest -q                              run the tests
 python -m tracking.demo                          live hand view
 python -m tracking.sigil_demo                    zoom, draw circle / line / V, fist
-python -m tracking.record_shapes                 record labeled shape drawings
+python -m tracking.record_sigils                 record your own drawings of the 26 sigils
+python -m recognition.evaluate_sigils data/sigils.jsonl   accuracy of the sigil recognizer on them
+python -m tracking.record_shapes                 record labeled circle / line / V drawings
 python -m recognition.evaluate data/shapes.jsonl leave-one-out accuracy and confusion table
 python -m tracking.replay FILE.jsonl             run gesture detection on a recorded landmark file
 python -m game.simulate                          bot-vs-bot statistics

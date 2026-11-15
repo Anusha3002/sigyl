@@ -1,7 +1,8 @@
 """Play Sigyl against the bot.
 
   python -m ui.play                 camera + gestures
-  python -m ui.play --shapes FILE   also learn from recorded sigil drawings (later)
+  It also learns from your own sigil drawings in data/sigils.jsonl when that file exists
+  (record them with python -m tracking.record_sigils).
 
 Gestures: zoom = start, pinch and draw a card's sigil = pick it, fist = lock it in.
 Keys (for testing without gestures): s = start, 1 2 3 = pick that card, space = lock in,
@@ -104,7 +105,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="config.yaml")
     ap.add_argument("--camera", type=int)
-    ap.add_argument("--shapes", help="recorded sigil drawings to learn from")
+    ap.add_argument("--shapes", default="data/sigils.jsonl", help="recorded sigil drawings to learn from (used if the file exists)")
     ap.add_argument("--seconds", type=float, default=25.0, help="time per pick")
     args = ap.parse_args()
 
@@ -115,6 +116,7 @@ def main() -> int:
         for label, pts in load_shapes(args.shapes):
             if label in known:
                 rec.add_template(label, pts)
+        print(f"Learned from your drawings in {args.shapes}")
     game = Game(MatchSession(pick_seconds=args.seconds), rec, GestureConfig.from_dict(cfg.get("gestures")))
     art = CardArt()
     tracker = HandTracker(cfg["model_path"], max_hands=cfg["max_hands"])
