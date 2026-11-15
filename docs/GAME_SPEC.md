@@ -88,3 +88,9 @@ Real matches ended 100-100 or 100-80: in bot simulations 57% of slots changed no
 Effect in 4,000 bot-vs-bot matches (smarter bot on both sides): draws about 15%, knockouts about 59%, dead slots about 30%. Knockouts are now common; if that is too deadly, the levers are `START_AURA` in `game/cards.py` and `DEFENSE_BLOCK` in `game/match.py`.
 The older rule text above (difference rule, full block, start at 100) is superseded by this section.
 
+## Update, Nov 15 (evening): back to 100 starting Aura
+
+Starting at 60 ended real matches in two or three slots. Start is 100 again (cap 100). The other two changes stay: both attacks land, defense blocks half. In 4,000 bot matches: 92% reach slot 5, knockouts about 14%, draws about 9%, dead slots about 34%.
+
+Ideas kept for later, not built: show the type of the bot's pick as a hint; a comeback bonus for the player who is behind; best of three; raising the cap to 150 so early heals count.
+

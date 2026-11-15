@@ -78,7 +78,7 @@ def test_higher_aura_wins_after_five_slots():
     seq0 = [A(10), F, F, F, F]
     seq1 = [F, F, F, F, F]
     r = resolve_match(seq0, seq1)
-    assert r.aura == (60, 50) and r.winner == 0 and not r.knockout
+    assert r.aura == (100, 90) and r.winner == 0 and not r.knockout
     assert len(r.slots) == 5
 
 
@@ -90,7 +90,7 @@ def test_equal_aura_is_a_draw():
 def test_knockout_stops_early():
     r = resolve_match([A(50), A(50), A(50), A(50), A(50)], [F] * 5)
     assert r.knockout and r.winner == 0
-    assert len(r.slots) == 2 and r.aura == (60, 0)
+    assert len(r.slots) == 2 and r.aura == (100, 0)
 
 
 def test_both_players_lose_aura_only_in_attack_vs_attack_or_with_charm():
@@ -102,14 +102,14 @@ def test_both_players_lose_aura_only_in_attack_vs_attack_or_with_charm():
             assert (d[0] < 0 and d[1] < 0) == both_attack, (x, y, d)
 
 
-def test_match_starts_at_60_aura_and_heals_can_go_up_to_100():
-    r = resolve_match([H(50), H(50), F, F, F], [F] * 5)
-    assert r.slots[0].aura == (100, 60) and r.slots[1].aura == (100, 60)
+def test_match_starts_at_100_aura_which_is_also_the_cap():
+    r = resolve_match([H(50), F, F, F, F], [F] * 5)
+    assert r.slots[0].aura == (100, 100)
 
 
 def test_equal_aura_after_all_slots_is_a_draw():
     r = resolve_match([A(20), A(10), F, F, F], [A(10), A(20), F, F, F])
-    assert r.aura == (30, 30) and r.winner is None
+    assert r.aura == (70, 70) and r.winner is None
 
 
 def test_mismatched_lengths_rejected():
