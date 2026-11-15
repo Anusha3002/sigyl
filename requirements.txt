@@ -1,0 +1,6 @@
+# Pinned to the versions that installed cleanly on the Mac (Python 3.12, Apple Silicon).
+# mediapipe brings in OpenCV (opencv-contrib-python), so OpenCV is not listed separately.
+mediapipe==1.2.0
+numpy==2.5.4
+PyYAML==6.0.3
+pytest==9.2.0

@@ -1,0 +1,20 @@
+# Sigyl settings. Edit here instead of in the code.
+camera_index: 0            # run `python -m tracking.check_env` and look at camera_check/ to find yours
+resolution: [640, 480]     # width, height the pipeline works at (Pi friendly)
+fps: 30
+mirror: true               # mirror like a mirror; also makes MediaPipe's Left/Right label match your real hand
+fit: crop                  # crop (no distortion) or stretch, when the camera is not 4:3
+max_hands: 1               # 1 for one-player testing
+model_path: models/hand_landmarker.task
+effect_quality: medium     # low | medium | high
+
+# Gesture thresholds. Distances are in palm sizes (wrist to middle knuckle), so they ignore how far you are from the camera.
+gestures:
+  zoom_closed: 0.35      # thumb-index gap that counts as closed at the start of the zoom
+  zoom_open: 1.2         # gap that counts as spread wide at the end (this starts the game)
+  zoom_window_ms: 700    # the spread must happen within this time
+  pinch_on: 0.3          # below this = pinching
+  pinch_off: 0.55        # above this = released
+  fist_curl: 0.45        # all fingertips this close to their knuckles = fist
+  fist_thumb_tuck: 0.7   # thumb this close to the pinky knuckle = fist (a pinch keeps the thumb far away)
+  fist_hold_ms: 500      # hold the fist this long to lock in
