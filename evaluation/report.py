@@ -2,6 +2,7 @@
 
   python -m ui.play --log-timing timing.jsonl      play a match or two, then quit with q
   python -m evaluation.report timing.jsonl
+  python -m evaluation.report timing1.jsonl timing2.jsonl    several runs reported together
 
 Prints frame rate, how long each stage of a frame takes, and the delay from finishing a sigil
 to the result being on screen.
@@ -36,6 +37,7 @@ def load(path: str):
 def summarize(frames: List[Dict], strokes: List[Dict]) -> Dict:
     out: Dict = {"frames": len(frames), "strokes": len(strokes)}
     if len(frames) > 1:
+        # a gap that goes backwards in time is the seam between two logs, not a frame
         gaps = [(b["t"] - a["t"]) * 1000.0 for a, b in zip(frames, frames[1:]) if b["t"] > a["t"]]
         out["seconds"] = frames[-1]["t"] - frames[0]["t"]
         out["fps_mean"] = (len(frames) - 1) / out["seconds"] if out["seconds"] > 0 else 0.0
@@ -56,10 +58,20 @@ def summarize(frames: List[Dict], strokes: List[Dict]) -> Dict:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("file")
+    ap.add_argument("files", nargs="+", help="one or more timing logs; several are reported together")
     args = ap.parse_args()
-    header, frames, strokes = load(args.file)
+    header, frames, strokes, parts = {}, [], [], []
+    for path in args.files:
+        header, f, st = load(path)
+        if len(f) > 1:
+            parts.append(summarize(f, []))
+        frames += f
+        strokes += st
     s = summarize(frames, strokes)
+    if len(parts) > 1:   # frame gaps and fps must not count the pause between two separate runs
+        s["seconds"] = sum(p["seconds"] for p in parts)
+        s["fps_mean"] = sum(p["frames"] - 1 for p in parts) / s["seconds"]
+        print(f"{len(args.files)} logs combined")
     print(f"Settings: {header}")
     if "fps_mean" not in s:
         print("Not enough frames in this log.")

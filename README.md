@@ -61,7 +61,7 @@ Full rules and their history: `docs/GAME_SPEC.md`.
 | `assets/cards/` | The 26 card images. |
 | `data/` | Recorded shape drawings. |
 | `tests/` | Unit tests, including two recorded hand clips and a full match played by simulated gestures. |
-| `docs/` | Game spec. |
+| `docs/` | Game spec (`GAME_SPEC.md`) and evaluation results (`EVALUATION.md`). |
 | `AGENT_LOG.md` | Log of AI assistance: what was generated, what went wrong, how it was checked. |
 
 ## Other tools
@@ -80,10 +80,10 @@ python -m ui.play --log-timing timing.jsonl      play while logging speed
 python -m evaluation.report timing.jsonl         frame rate, time per stage, drawing-to-result delay
 ```
 
-## Status (version 1)
+## Status
 
 Working: one player against the bot, on a Mac, with one hand.
 
 Known limits:
-- The sigil templates were traced by eye from the card designs. Accuracy on real drawings of the 26 sigils has not been measured yet. (The earlier circle / line / V recognizer scored 29 of 30 on recorded drawings.)
-- Not built yet: two players, the final visual style, the evaluation numbers, a clip replay mode, and the Raspberry Pi 5 port.
+- Everything has been measured on one player only. With that player's recorded drawings the game picks the right card 94.3% of the time; see `docs/EVALUATION.md`.
+- Not built yet: two players, the final visual style, a clip replay mode, and the Raspberry Pi 5 port.
