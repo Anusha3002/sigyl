@@ -17,7 +17,7 @@ class Stroke:
     points: Tuple[Point, ...]   # smoothed path, x and y normalized 0..1 of the frame
     t_start: float
     t_end: float
-    t_last_point: float = 0.0   # when the last kept point was drawn (the moment the hand finished the shape)
+    t_last_point: float = 0.0   # the last moment the pinch was still tight, i.e. just before the fingers began to open
 
     def length(self) -> float:
         return sum(math.dist(self.points[i - 1], self.points[i]) for i in range(1, len(self.points)))
@@ -62,8 +62,7 @@ class StrokeCapture:
             self._t_points.append(t_ms)
         if "pinch_end" in state.events:
             pts = self._points[self.trim:len(self._points) - self.trim] if len(self._points) > 2 * self.trim else []
-            times = self._t_points[self.trim:len(self._t_points) - self.trim] if pts else []
-            stroke = Stroke(tuple(pts), self._t_start, t_ms, times[-1] if times else t_ms)
+            stroke = Stroke(tuple(pts), self._t_start, t_ms, self._t_points[-1] if self._t_points else t_ms)
             self.active = False
             self._points = []
             if len(stroke.points) >= self.min_points and stroke.length() >= self.min_length:

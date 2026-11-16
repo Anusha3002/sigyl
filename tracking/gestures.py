@@ -31,7 +31,8 @@ class GestureConfig:
     pinch_off: float = 0.55       # gap above this = maybe released (higher than pinch_on so it does not flicker)
     pinch_open: float = 0.85      # gap above this = clearly released
     pinch_hold_ms: float = 60     # pinch must last this long before drawing starts
-    release_hold_ms: float = 80   # a clear release (above pinch_open) must last this long before drawing stops
+    release_hold_ms: float = 50   # a clear release (above pinch_open) must last this long before drawing stops.
+                                  # Was 80; 50 (two frames) cut 30 ms off the drawing-to-result delay and split no stroke in four recorded clips.
     loose_hold_ms: float = 350    # a loose reading (between pinch_off and pinch_open) must last this long.
                                   # The tracker sometimes reads a held pinch as 0.65-0.7 for a few frames
                                   # while the hand turns; that must not cut the drawing in two.

@@ -32,4 +32,4 @@ def test_stroke_remembers_when_its_last_point_was_drawn():
     _, _, strokes = run_all(drawing(circle_path()), start=1000, det=det, cap=cap)
     s = strokes[0]
     assert s.t_start < s.t_last_point <= s.t_end
-    assert s.t_end - s.t_last_point < 250   # the release wait plus the trimmed points
+    assert s.t_end - s.t_last_point < 200   # the fingers opening plus the release wait

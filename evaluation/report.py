@@ -76,10 +76,10 @@ def main() -> int:
     if "latency_ms" in s:
         l = s["latency_ms"]
         print(f"\n{s['strokes']} sigils drawn; {s['recognized_pct']:.0f}% picked a card (the rest were refused)")
-        print(f"Finish drawing -> result on screen: median {l['median']:.0f} ms, 95% under {l['p95']:.0f} ms, worst {l['worst']:.0f} ms")
+        print(f"Fingers start to open -> result on screen: median {l['median']:.0f} ms, 95% under {l['p95']:.0f} ms, worst {l['worst']:.0f} ms")
         print(f"  under the 200 ms target: {l['under_200_pct']:.0f}% of sigils")
         print(f"  of which matching the sigil itself takes: median {s['recognize_ms']['median']:.1f} ms, worst {s['recognize_ms']['worst']:.1f} ms")
-        print("  (the rest is the 80 ms wait that confirms you really let go, plus one or two frames)")
+        print("  (the rest: the fingers opening, the short wait that confirms you really let go, and one frame)")
     else:
         print("\nNo sigils were drawn in this log.")
     return 0
