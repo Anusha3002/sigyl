@@ -28,9 +28,13 @@ class GestureConfig:
     zoom_open: float = 1.2        # gap that counts as "spread wide" at the end of a zoom
     zoom_window_ms: float = 700   # the spread must happen within this time
     pinch_on: float = 0.3         # gap below this = pinching
-    pinch_off: float = 0.55       # gap above this = released (higher than pinch_on so it does not flicker)
+    pinch_off: float = 0.55       # gap above this = maybe released (higher than pinch_on so it does not flicker)
+    pinch_open: float = 0.85      # gap above this = clearly released
     pinch_hold_ms: float = 60     # pinch must last this long before drawing starts
-    release_hold_ms: float = 80   # release must last this long before drawing stops
+    release_hold_ms: float = 80   # a clear release (above pinch_open) must last this long before drawing stops
+    loose_hold_ms: float = 350    # a loose reading (between pinch_off and pinch_open) must last this long.
+                                  # The tracker sometimes reads a held pinch as 0.65-0.7 for a few frames
+                                  # while the hand turns; that must not cut the drawing in two.
     start_cooldown_ms: float = 400  # after the zoom, ignore pinches for this long
     fist_curl: float = 0.45       # every fingertip closer than this (palm sizes) to its knuckle = fist
     fist_thumb_tuck: float = 0.7  # thumb tip this close (palm sizes) to the pinky knuckle = thumb tucked across the palm.
@@ -92,6 +96,7 @@ class GestureDetector:
         self._center_hist: Deque[Tuple[float, Tuple[float, float], float]] = deque()
         self._pinching = False
         self._pinch_change_since: Optional[float] = None
+        self._loose_since: Optional[float] = None
         self._fist_since: Optional[float] = None
         self._last_seen: Optional[float] = None
         self._ready_since = 0.0
@@ -114,6 +119,7 @@ class GestureDetector:
                     self.phase = READY
                 self._pinching = False
                 self._pinch_change_since = None
+                self._loose_since = None
                 self._fist_since = None
                 self._pinch_hist.clear()
                 self._center_hist.clear()
@@ -162,23 +168,29 @@ class GestureDetector:
     # ---- helpers ------------------------------------------------------------
     def _update_pinch(self, t_ms: float, f: Features, events: List[str], fist_pose: bool) -> None:
         c = self.cfg
-        # A fist has thumb and index touching too, so a closing fist must not start a stroke.
-        want = (f.pinch < c.pinch_on and not fist_pose) if not self._pinching else (not f.pinch > c.pinch_off and not fist_pose)
-        if want == self._pinching:
-            self._pinch_change_since = None
-            return
-        if self._pinch_change_since is None:
-            self._pinch_change_since = t_ms
-        need = c.pinch_hold_ms if want else c.release_hold_ms
-        if t_ms - self._pinch_change_since >= need:
-            self._pinching = want
-            self._pinch_change_since = None
-            if want:
-                self.phase = DRAWING
-                events.append("pinch_begin")
+        if not self._pinching:
+            # A fist has thumb and index touching too, so a closing fist must not start a stroke.
+            if f.pinch < c.pinch_on and not fist_pose:
+                if self._pinch_change_since is None:
+                    self._pinch_change_since = t_ms
+                if t_ms - self._pinch_change_since >= c.pinch_hold_ms:
+                    self._pinching, self._pinch_change_since, self._loose_since = True, None, None
+                    self.phase = DRAWING
+                    events.append("pinch_begin")
             else:
-                self.phase = READY
-                events.append("pinch_end")
+                self._pinch_change_since = None
+            return
+        # pinching: has it been released?
+        clearly_open = f.pinch > c.pinch_open or fist_pose
+        loose = f.pinch > c.pinch_off
+        self._pinch_change_since = (self._pinch_change_since or t_ms) if clearly_open else None
+        self._loose_since = (self._loose_since or t_ms) if loose or clearly_open else None
+        released = ((self._pinch_change_since is not None and t_ms - self._pinch_change_since >= c.release_hold_ms)
+                    or (self._loose_since is not None and t_ms - self._loose_since >= c.loose_hold_ms))
+        if released:
+            self._pinching, self._pinch_change_since, self._loose_since = False, None, None
+            self.phase = READY
+            events.append("pinch_end")
 
     def _speed(self) -> float:
         """Palm movement in palm sizes per second over the last quarter second."""

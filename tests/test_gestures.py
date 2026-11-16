@@ -196,3 +196,44 @@ def test_recorded_fist_clip_locks_during_the_fists():
     assert [e for _, e in found if e in ("start", "lock")] == ["start", "lock"]
     lock_t = [t for t, e in found if e == "lock"][0]
     assert 16000 < lock_t < 20000
+
+
+def test_brief_loose_reading_does_not_cut_the_stroke():
+    # seen in a recorded clip: a held pinch read as 0.64-0.71 for four frames while the hand turned
+    det = GestureDetector()
+    events(det, zoom_sequence())
+    seq = [make_hand(pinch=2.0)] * 20 + [make_hand(pinch=0.1)] * 15 + [make_hand(pinch=0.68)] * 5 + [make_hand(pinch=0.1)] * 15
+    assert events(det, seq, start=1000) == ["pinch_begin"]
+    assert det.phase == DRAWING
+
+
+def test_staying_loose_ends_the_stroke():
+    det = GestureDetector()
+    events(det, zoom_sequence())
+    seq = [make_hand(pinch=2.0)] * 20 + [make_hand(pinch=0.1)] * 15 + [make_hand(pinch=0.68)] * 15
+    assert events(det, seq, start=1000) == ["pinch_begin", "pinch_end"]
+
+
+def test_a_clear_release_still_ends_the_stroke_quickly():
+    det = GestureDetector()
+    events(det, zoom_sequence())
+    seq = [make_hand(pinch=2.0)] * 20 + [make_hand(pinch=0.1)] * 15 + [make_hand(pinch=1.5)] * 4
+    found = run(det, seq, start=1000)
+    assert [e for _, e in found] == ["pinch_begin", "pinch_end"]
+    release_started = 1000 + 35 * 33.3
+    assert found[1][0] - release_started <= 120
+
+
+def test_recorded_two_ring_drawing_is_not_cut_in_two():
+    """Real clip: while drawing Fade (two rings), the pinch read loose for about 100 ms at 6.8 s."""
+    from tracking.landmarks import load_landmarks
+    from tracking.strokes import StrokeCapture
+    _, frames = load_landmarks(os.path.join(DATA, "clip_fade.jsonl"))
+    det, cap, strokes = GestureDetector(), StrokeCapture(), []
+    det.start_ready()
+    for t, hands in frames:
+        s = cap.update(t, det.update(t, hands[0] if hands else None))
+        if s:
+            strokes.append(s)
+    whole = [s for s in strokes if s.t_start < 6800 < s.t_end]
+    assert len(whole) == 1 and whole[0].t_end - whole[0].t_start > 3000
