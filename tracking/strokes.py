@@ -17,6 +17,7 @@ class Stroke:
     points: Tuple[Point, ...]   # smoothed path, x and y normalized 0..1 of the frame
     t_start: float
     t_end: float
+    t_last_point: float = 0.0   # when the last kept point was drawn (the moment the hand finished the shape)
 
     def length(self) -> float:
         return sum(math.dist(self.points[i - 1], self.points[i]) for i in range(1, len(self.points)))
@@ -36,6 +37,7 @@ class StrokeCapture:
         self.min_length = min_length
         self.smoothing = smoothing
         self._points: List[Point] = []
+        self._t_points: List[float] = []
         self._t_start = 0.0
         self.active = False
 
@@ -50,16 +52,18 @@ class StrokeCapture:
 
     def update(self, t_ms: float, state: GestureState) -> Optional[Stroke]:
         if "pinch_begin" in state.events:
-            self._points, self._t_start, self.active = [], t_ms, True
+            self._points, self._t_points, self._t_start, self.active = [], [], t_ms, True
         if self.active and state.features is not None and state.pinching and state.features.pinch < self.max_pinch:
             p = state.features.point
             if self._points and self.smoothing < 1.0:
                 q = self._points[-1]
                 p = (q[0] + self.smoothing * (p[0] - q[0]), q[1] + self.smoothing * (p[1] - q[1]))
             self._points.append(p)
+            self._t_points.append(t_ms)
         if "pinch_end" in state.events:
             pts = self._points[self.trim:len(self._points) - self.trim] if len(self._points) > 2 * self.trim else []
-            stroke = Stroke(tuple(pts), self._t_start, t_ms)
+            times = self._t_points[self.trim:len(self._t_points) - self.trim] if pts else []
+            stroke = Stroke(tuple(pts), self._t_start, t_ms, times[-1] if times else t_ms)
             self.active = False
             self._points = []
             if len(stroke.points) >= self.min_points and stroke.length() >= self.min_length:

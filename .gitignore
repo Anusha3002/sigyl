@@ -9,3 +9,4 @@ requirements.lock.txt
 strokes_sheet.png
 test_clip*.jsonl
 /*_clip*.jsonl
+/timing*.jsonl

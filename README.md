@@ -76,6 +76,8 @@ python -m tracking.record_shapes                 record labeled circle / line / 
 python -m recognition.evaluate data/shapes.jsonl leave-one-out accuracy and confusion table
 python -m tracking.replay FILE.jsonl             run gesture detection on a recorded landmark file
 python -m game.simulate                          bot-vs-bot statistics
+python -m ui.play --log-timing timing.jsonl      play while logging speed
+python -m evaluation.report timing.jsonl         frame rate, time per stage, drawing-to-result delay
 ```
 
 ## Status (version 1)

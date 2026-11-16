@@ -139,3 +139,22 @@ def test_all_26_card_images_exist():
     from game.cards import CATALOG
     for title, _, _ in CATALOG:
         assert os.path.exists(os.path.join("assets", "cards", title.lower() + ".jpg")), title
+
+
+def test_a_judged_stroke_leaves_a_timing_report_for_one_frame():
+    p = Player()
+    p.zoom()
+    target = p.game.session.offer[1].title
+    reports = []
+    real_update = p.game.update
+
+    def spy(now, t_ms, hand):
+        real_update(now, t_ms, hand)
+        if p.game.stroke_report:
+            reports.append(dict(p.game.stroke_report))
+    p.game.update = spy
+    p.draw(target)
+    assert len(reports) == 1
+    r = reports[0]
+    assert r["label"] == target and target in r["offer"] and r["recognize_ms"] >= 0
+    assert 0 < p.now * 1000.0 - r["drawn_ms"] < 2000 and r["points"] > 10
